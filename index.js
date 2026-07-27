@@ -3,7 +3,7 @@ const fs    = require('fs')
 const polarReader          = require('./polarReader')
 const calibration          = require('./calibration')
 const { calculatePerformance } = require('./performanceCalculator')
-const H5000N2K             = require('./h5000-n2k-emulator')
+const PerfCalcN2K          = require('./n2k-perf-emulator')
 const { createSmoother }   = require('./lib/Smoothers')
 
 module.exports = function (app) {
@@ -25,7 +25,7 @@ module.exports = function (app) {
   const plugin = {
     id:'performance-calculator-v3',
     name:'Performance Calculator v1.3.0',
-    description:'Performance Calculator with Data Smoothing and Mast Movement Correction - v1.3.0 - Emulates B&G H5000 calculations',
+    description:'Performance Calculator with Data Smoothing and Mast Movement Correction - v1.3.0 - Publishes performance metrics using the H5000 PGN layout',
     options: {}
   }
 
@@ -39,7 +39,7 @@ module.exports = function (app) {
         title: '📌 Plugin Version',
         default: 'v1.3.0 - Mast Movement Correction Edition',
         readOnly: true,
-        description: 'Current version: 1.3.0 | Features: Mast Movement Correction (NEW!), Data Smoothing, Heel Compensation, Polar Performance, VMG, H5000 Emulation'
+        description: 'Current version: 1.3.0 | Features: Mast Movement Correction (NEW!), Data Smoothing, Heel Compensation, Polar Performance, VMG, N2K broadcast (H5000-compatible PGN layout)'
       },
       awaPath:{type:'string',default:'environment.wind.angleApparent'},
       awsPath:{type:'string',default:'environment.wind.speedApparent'},
@@ -58,7 +58,7 @@ module.exports = function (app) {
       calibrationFile:{type:'string',default:'./calibration.json'},
       useSTW:{type:'boolean',default:true},
 
-      emulateN2K:{type:'boolean',default:true},
+      emulateN2K:{type:'boolean',default:true,description:'Broadcast device identity on the NMEA 2000 bus (addr 138, address claim + product info + keep-alive). Perf-data PGN 130824 sending has a known limitation — see README.'},
       canDevice:{type:'string',default:'can0'},
       n2kSourceAddress:{type:'number',default:138},
 
@@ -220,8 +220,12 @@ module.exports = function (app) {
     else app.error('[PerfCalc] Calibration missing',calibPath)
 
     if (opt.emulateN2K) {
-      h5 = new H5000N2K({ app, canDevice:opt.canDevice, preferredAddress:opt.n2kSourceAddress })
-      app.debug('[PerfCalc] H5000 emulation ON')
+      if (h5) {
+        try { h5.stop() } catch (err) { app.error('[PerfCalc] stopping stale N2K emu:', err.message) }
+        h5 = null
+      }
+      h5 = new PerfCalcN2K({ app, canDevice:opt.canDevice, preferredAddress:opt.n2kSourceAddress })
+      app.debug('[PerfCalc] N2K performance broadcast ON')
     }
 
     // Initialize smoothers if enabled
@@ -378,8 +382,9 @@ module.exports = function (app) {
       try {
         h5.stop()
       } catch (err) {
-        app.error('[PerfCalc] Error stopping H5000 emulator:', err)
+        app.error('[PerfCalc] Error stopping N2K emulator:', err)
       }
+      h5 = null
     }
     app.debug('[PerfCalc] stopped') 
   }

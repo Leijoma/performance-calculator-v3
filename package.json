@@ -1,7 +1,7 @@
 {
   "name": "performance-calculator-v3",
   "version": "1.3.0",
-  "description": "Performance Calculator with Mast Movement Correction and Data Smoothing - Emulates B&G H5000 calculations with wind corrections for mast motion.",
+  "description": "Signal K performance calculator: true wind triangle, leeway, set & drift, polar targets, VMG. Includes mast-motion correction for apparent wind and data smoothing. Broadcasts results on NMEA 2000 using the same PGN layout as B&G's H5000 CPU so any B&G/Simrad MFD renders them.",
   "main": "index.js",
   "scripts": {
     "test": "node tests/runTests.js"
@@ -18,7 +18,7 @@
   "author": "Magnus L",
   "license": "MIT",
   "dependencies": {
-    "@canboat/canboatjs": "^2.0.0",
+    "@canboat/canboatjs": "^3.13.2",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@mui/material": "^7.1.1",
@@ -29,7 +29,6 @@
     "appIcon": "icon.png",
     "displayName": "Polar Performance",
     "launchUrl": "/performance-calculator-v3/webapp/index.html"
-
   },
   "devDependencies": {
     "autoprefixer": "^10.4.21",

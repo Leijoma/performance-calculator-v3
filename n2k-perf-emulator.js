@@ -1,4 +1,4 @@
-// h5000-n2k-emulator.js – now null‑aware & extended IDs
+// n2k-perf-emulator.js – now null‑aware & extended IDs
 // -----------------------------------------------------------------------------
 //  • Skips sending PGN 130824 if value is null/NaN.
 //  • Adds IDs for TIDAL DRIFT, TIDAL SET, LEEWAY.
@@ -38,12 +38,12 @@ const KEY_MAP = Object.fromEntries(
 const KEEP_ALIVE_PGN = '%s,7,65305,%s,255,8,41,9f,01,17,1c,01,00,00'
 const PERF_PGN_BASE  = '%s,3,130824,%s,255,%s,7d,99'
 
-class H5000N2K {
+class PerfCalcN2K {
   constructor ({ app, canDevice = 'can0', preferredAddress = 138 }) {
     this.app = app || { debug: console.log, error: console.error }
     this.src = preferredAddress
 
-    this.app.debug(`H5000N2K: Initializing with canDevice=${canDevice}, address=${preferredAddress}`)
+    this.app.debug(`PerfCalcN2K: Initializing with canDevice=${canDevice}, address=${preferredAddress}`)
 
     try {
       this.can = new SimpleCan({
@@ -53,9 +53,9 @@ class H5000N2K {
         transmitPGNs: [126996],
         addressClaim: {
           'Unique Number': 1731561,
-          'Manufacturer Code': 275,  // Navico numeric code
-          'Device Function': 130,     // Navigation Display (was 190 Internal Environment)
-          'Device Class': 'Display',  // Display/Instrumentation
+          'Manufacturer Code': 999,   // Reserved / unknown vendor
+          'Device Function': 130,     // Navigation Display
+          'Device Class': 'Display',
           'Device Instance Lower': 0,
           'Device Instance Upper': 0,
           'System Instance': 0,
@@ -64,7 +64,7 @@ class H5000N2K {
         productInfo: {
           'NMEA 2000 Version': 2100,
           'Product Code': 246,
-          'Model ID': 'H5000-Emu',
+          'Model ID': 'SK Perf-Calc',
           'Software Version Code': '1.1.0',
           'Model Serial Code': '000001',
           'Certification Level': 2,
@@ -72,14 +72,14 @@ class H5000N2K {
         }
       })
       this.can.start()
-      this.app.debug('H5000N2K: SimpleCan started successfully')
+      this.app.debug('PerfCalcN2K: SimpleCan started successfully')
 
       this.keepAliveTimer = setInterval(() => {
         const msg = util.format(KEEP_ALIVE_PGN, new Date().toISOString(), this.src)
         this.can.sendPGN(msg)
       }, 1000)
     } catch (err) {
-      this.app.error(`H5000N2K: Failed to initialize SimpleCan: ${err.message}`)
+      this.app.error(`PerfCalcN2K: Failed to initialize SimpleCan: ${err.message}`)
       this.app.error(err.stack)
     }
   }
@@ -93,13 +93,13 @@ class H5000N2K {
 
   send (name, value, scale = 1) {
     if (value == null || Number.isNaN(value)) {
-      this.app.debug(`H5000N2K: Skipping ${name} (value is null or NaN)`)
+      this.app.debug(`PerfCalcN2K: Skipping ${name} (value is null or NaN)`)
       return // skip null
     }
 
     const key = KEY_MAP[name.toUpperCase()]
     if (!key) {
-      this.app.error(`H5000N2K: Unknown parameter "${name}"`)
+      this.app.error(`PerfCalcN2K: Unknown parameter "${name}"`)
       return
     }
 
@@ -115,21 +115,21 @@ class H5000N2K {
       const msg = util.format(PERF_PGN_BASE, new Date().toISOString(), this.src, len) + payload
 
       // Diagnostic logging
-      this.app.debug(`H5000N2K: Sending ${name} = ${value.toFixed(2)} (scale=${scale}, key=${key}, intVal=${intVal})`)
+      this.app.debug(`PerfCalcN2K: Sending ${name} = ${value.toFixed(2)} (scale=${scale}, key=${key}, intVal=${intVal})`)
 
       if (!this.can) {
-        this.app.error('H5000N2K: SimpleCan not initialized, cannot send PGN')
+        this.app.error('PerfCalcN2K: SimpleCan not initialized, cannot send PGN')
         return
       }
 
       this.can.sendPGN(msg)
     } catch (err) {
-      this.app.error(`H5000N2K: Error sending ${name}: ${err.message}`)
+      this.app.error(`PerfCalcN2K: Error sending ${name}: ${err.message}`)
       this.app.error(err.stack)
     }
   }
 }
 
-module.exports = H5000N2K
+module.exports = PerfCalcN2K
 module.exports.KEY_MAP = KEY_MAP
 module.exports.DATA_IDS = DATA_IDS
