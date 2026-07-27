@@ -1,0 +1,31 @@
+{
+  "stwHeelCompensation": {
+    "enabled": true,
+    "curve": [
+      {
+        "heel": 0,
+        "factor": 1.0
+      },
+      {
+        "heel": 10,
+        "factor": 0.99
+      },
+      {
+        "heel": 20,
+        "factor": 0.97
+      },
+      {
+        "heel": 30,
+        "factor": 0.94
+      },
+      {
+        "heel": 40,
+        "factor": 0.9
+      }
+    ]
+  },
+  "vmgLimits": {
+    "minUpwindAngle": 35,
+    "maxDownwindAngle": 170
+  }
+}

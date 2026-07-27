@@ -1,0 +1,13 @@
+node_modules/
+package-lock.json
+*.log
+.DS_Store
+
+# webapp build artefacts (rebuild locally with esbuild)
+webapp/public/bundle.js
+webapp/public/bundle.js.map
+webapp/public/bundle.css
+
+# personal calibration overrides — keep the shipped calibration.json (defaults),
+# but if you want to keep your own tuning out of the repo, uncomment:
+# calibration.json
