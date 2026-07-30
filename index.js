@@ -344,20 +344,28 @@ module.exports = function (app) {
     if(h5){
       const send=(name,val,scale)=>{ if(val!=null&&!Number.isNaN(val)) h5.send(name,val,scale) }
 
-      send('POLAR SPEED',       kts2mps(r.polarSpeed),        100)
-      send('POLAR SPEED RATIO', r.polarPerf,                  1000)
-      send('VMG TO WIND',       kts2mps(r.vmg),               100)
-      send('TARGET TWA',        deg2rad(r.targetTWA),         1000)
+      // Scale factors follow the H5000/htool convention for PGN 130824
+      // (see signalk-bandg-performance-plugin):
+      //   rad / signedRad → *10000 (0.0001 rad/LSB)
+      //   m/s             → *100   (cm/s)
+      //   ratio (percent) → *1000  (per-mille)
+      send('POLAR SPEED',       kts2mps(r.polarSpeed),        100)    // m/s
+      send('POLAR SPEED RATIO', r.polarPerf,                  1000)   // ratio
+      send('VMG TO WIND',       kts2mps(r.vmg),               100)    // m/s
+      send('TARGET TWA',        deg2rad(r.targetTWA),         10000)  // signedRad
 
+      // TWS KNOTS / TWA / TWD keys are not in htool's catalog — keep the
+      // scale that has verified fine on Vulcan/Triton so far. Only change
+      // if you observe wrong values.
       send('TWS KNOTS',         r.tws,                        100)
       send('TWA',               r.twa,                        100)
       send('TWD',               r.windDirectionMagnetic,      100)
-      send('OPTIMUM WIND ANGLE',r.optimumWindAngle,           100)
-      send('VMG PERFORMANCE',   r.vmgPerf,                    1000)
+      send('OPTIMUM WIND ANGLE',r.optimumWindAngle,           10000)  // signedRad (per htool)
+      send('VMG PERFORMANCE',   r.vmgPerf,                    1000)   // ratio
 
-      send('TIDAL DRIFT',       ms2kts(r.currentSpeed),       100)
-      send('TIDAL SET',         r.currentSet,                 100)
-      send('LEEWAY',            r.leeway,                     100)
+      send('TIDAL DRIFT',       r.currentSpeed,               100)    // m/s (was ms2kts!)
+      send('TIDAL SET',         r.currentSet,                 10000)  // rad
+      send('LEEWAY',            r.leeway,                     10000)  // rad
     }
 
     if(now-lastLog>LOG_THROTTLE_MS){ app.debug('[PerfCalc] out',JSON.stringify(r)); lastLog=now }
